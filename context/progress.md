@@ -66,17 +66,19 @@
 
 ## Milestone 4: Graph and Alert Engine
 
-- [ ] `4.1` Implement document family inference
-- [ ] `4.2` Implement deterministic edge generation
-- [ ] `4.3` Implement semantic related-document linking
-- [ ] `4.4` Implement duplicate and near-duplicate detection
-- [ ] `4.5` Implement superseded-version and contradiction detection
-- [ ] `4.6` Generate alert records and graph-ready payloads
-- [ ] `4.7` Verify graph quality and alert quality on representative document clusters
+- [x] `4.1` Implement document family inference
+- [x] `4.2` Implement deterministic edge generation
+- [x] `4.3` Implement semantic related-document linking
+- [x] `4.4` Implement duplicate and near-duplicate detection
+- [x] `4.5` Implement superseded-version and contradiction detection
+- [x] `4.6` Generate alert records and graph-ready payloads
+- [x] `4.7` Verify graph quality and alert quality on representative document clusters
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No graph or alert logic implemented yet.
+- `2026-04-15 23:30:00 +02:00` Implemented `scripts/build_graph.py` as the agentic 3-pass graph engine. Pass 1: deterministic edges (TF-IDF near-duplicate detection, entity-based BELONGS_TO_STUDY/ABOUT_PRODUCT/MENTIONS_SITE/PATIENT/SAFETY_EVENT edges, version chain prep). Pass 2: agentic cluster resolution (Claude receives groups of related documents and reasons about families, version chains, contradictions, missing links, and reclassifications). Pass 3: alert generation from rules + agent findings.
+- `2026-04-15 23:30:00 +02:00` Ran full pipeline on all 93 documents. Results: 994 relations (628 BELONGS_TO_STUDY, 249 ABOUT_PRODUCT, 74 MENTIONS_SITE, 11 SUPERSEDES, 11 REFERS_TO, 5 RELATED_TO, 4 IMPLEMENTS_AMENDMENT, 4 NEAR_DUPLICATE_OF, 1 DUPLICATE_OF). 58 alerts (16 isolated, 13 superseded, 10 near-duplicate, 6 contradiction, 6 suspicious noise, 4 low confidence, 3 missing expected link). 46 document families, 39 docs assigned to families, 33 docs marked current, 10 marked superseded. Agent proposed 3 reclassifications (2 accepted, 1 skipped for invalid label).
 
 ## Milestone 5: Backend and API Layer
 
