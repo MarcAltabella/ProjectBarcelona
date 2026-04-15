@@ -32,16 +32,19 @@
 
 ## Milestone 2: Document Ingestion Pipeline
 
-- [ ] `2.1` Register corpus files in the database
-- [ ] `2.2` Upload raw files to storage or map local file registry for development
-- [ ] `2.3` Extract text from `md`, `txt`, `html`, `csv`, `pdf`, and `docx`
-- [ ] `2.4` Store normalized text and structural metadata
-- [ ] `2.5` Create chunking strategy for evidence spans and semantic retrieval
-- [ ] `2.6` Verify extraction quality on representative clean, OCR, multilingual, and tabular files
+- [x] `2.1` Register corpus files in the database
+- [x] `2.2` Upload raw files to storage or map local file registry for development
+- [x] `2.3` Extract text from `md`, `txt`, `html`, `csv`, `pdf`, and `docx`
+- [x] `2.4` Store normalized text and structural metadata
+- [x] `2.5` Create chunking strategy for evidence spans and semantic retrieval
+- [x] `2.6` Verify extraction quality on representative clean, OCR, multilingual, and tabular files
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No ingestion work implemented yet.
+- `2026-04-15 19:30:41 +02:00` Implemented `scripts/ingest_corpus.py` as the offline ingestion pipeline. It scans the 93-file corpus, extracts text and structure for `md`, `txt`, `html`, `csv`, `pdf`, and `docx`, generates deterministic document IDs, uploads raw and derived artifacts to Supabase Storage, and emits linked-database SQL for `documents` and `internal.document_chunks`.
+- `2026-04-15 19:30:41 +02:00` Ran the full corpus ingestion against the remote Supabase project with batched SQL to avoid the Management API payload limit. Verified `93` corpus documents in `public.documents`, `1059` chunk rows in `internal.document_chunks`, and `93` objects in each of the `raw-documents` and `derived-artifacts` buckets.
+- `2026-04-15 19:30:41 +02:00` Verified representative extraction quality on clean HTML (`File_014.html`), tabular CSV (`File_073.csv`), multilingual PDF (`File_075.pdf`), and OCR-heavy text (`Scan_0031_compressed.txt`). All four are marked `completed`, with expected language detection, structural metadata, and derived-artifact previews stored remotely.
 
 ## Milestone 3: Classification and Entity Extraction
 
