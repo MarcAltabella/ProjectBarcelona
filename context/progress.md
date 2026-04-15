@@ -48,16 +48,21 @@
 
 ## Milestone 3: Classification and Entity Extraction
 
-- [ ] `3.1` Implement study relevance detection
-- [ ] `3.2` Implement internal document taxonomy classification
-- [ ] `3.3` Implement entity extraction for studies, products, versions, sites, patients, safety events, regulators, and people
-- [ ] `3.4` Add ambiguity handling and confidence scoring
-- [ ] `3.5` Add optional LLM arbitration for low-confidence cases
-- [ ] `3.6` Verify classification and extraction on edge-case documents
+- [x] `3.1` Implement study relevance detection
+- [x] `3.2` Implement internal document taxonomy classification
+- [x] `3.3` Implement entity extraction for studies, products, versions, sites, patients, safety events, regulators, and people
+- [x] `3.4` Add ambiguity handling and confidence scoring
+- [x] `3.5` Add optional LLM arbitration for low-confidence cases
+- [x] `3.6` Verify classification and extraction on edge-case documents
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No classification or entity extraction work implemented yet.
+- `2026-04-15 19:57:20 +02:00` Added `scripts/classify_and_extract.py` as the deterministic Milestone 3 pipeline. It reuses local extraction, scores the internal taxonomy with explicit rules, maps to final hackathon labels, extracts canonical entities, and writes `documents`, `studies`, `products`, `entities`, and `document_entities` through the Supabase service-role API.
+- `2026-04-15 19:57:20 +02:00` Ran the full Milestone 3 pipeline on all `93` documents and persisted the outputs remotely. Verified `93` classified documents, `6` studies, `3` products, `158` canonical entities, and `459` document-entity mention rows after fixing the `BIORCE-SAE-*` study/safety-event collision.
+- `2026-04-15 19:57:20 +02:00` Verified representative edge cases across clean and noisy documents: publication (`File_001.md`), admin noise (`File_003.md`), protocol (`File_006.md`), HTML ICF (`File_014.html`), CSR (`File_036.txt`), eTMF index (`File_064.md`), CRF-style CSV (`File_073.csv`), unrelated multilingual consent (`File_075.pdf`), OCR/fax synopsis (`Scan_0031_compressed.txt`), and generic deviation log (`Q1_2024_updated_REVIEWED_v3_JL_edits.txt`).
+- `2026-04-15 21:15:00 +02:00` Added LLM arbitration (milestone 3.5) using Anthropic Claude for documents with classification confidence below 0.85. Integrated into `classify_document()` with a `--skip-llm` flag. Verified on 6 low-confidence documents: the LLM corrected all 4 zero-score misclassifications (catering invoice, clinical assessment CRF, German lab ref ranges, Norwegian patient info) and confirmed or refined 2 mid-confidence cases. 23 of 93 documents fall below the 0.85 threshold.
+- `2026-04-15 22:10:00 +02:00` Major classification overhaul based on audit against the hackathon brief. Key changes: (1) Removed `study_relevance → NOISE` override — documents are now classified by type regardless of sponsor (NOISE=25→10 exact match). (2) Fixed `FINAL_LABEL_MAP`: `eTMF_regulatory_correspondence` and `Ethics_approval` now map to `eTMF` (Regulatory=10→3 exact, eTMF=6→13 exact). (3) Added `Patient_questionnaire` and `Info_sheet` categories with rules and DB enum values. (4) Added OCR-tolerant regexes for study codes and product codes (`BIORCE- ONC- 2023- 001` with spaces). (5) Improved NOISE detection: catches ESG reports, press releases, job postings, catering invoices, and academic review articles with journal DOI markers. (6) Updated LLM prompt to match new NOISE definition. Re-ran full pipeline: all 93 docs >= 0.85 confidence, 10/12 classes at exact or ±1 match with brief expectations.
 
 ## Milestone 4: Graph and Alert Engine
 
