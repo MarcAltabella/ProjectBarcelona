@@ -79,7 +79,8 @@ The recommended setup is:
 - CSV parsing: Python `csv` and `pandas`
 - Similarity and retrieval: `scikit-learn` TF-IDF baseline plus optional embeddings
 - Database writes from pipeline: `psycopg` or `supabase-py`
-- Optional embeddings and arbitration: OpenAI API for hard cases only
+- Embeddings: OpenAI API for text-to-embedding only
+- Reasoning and arbitration: Anthropic model for hard classification and relation-resolution cases only
 
 ### Database stack
 
@@ -103,7 +104,8 @@ The recommended setup is:
 - `Python` is the practical choice for heterogeneous file parsing and extraction
 - `Supabase Postgres` is enough to represent the graph cleanly without introducing graph database overhead
 - `pgvector` inside Supabase is enough if we need semantic related-document lookup
-- OpenAI is reserved for ambiguity resolution, not for the whole pipeline
+- OpenAI is reserved for embeddings, not for the whole pipeline
+- Anthropic is reserved for reasoning-heavy arbitration, not for the whole pipeline
 
 ## Concrete Database Design
 
@@ -1005,7 +1007,7 @@ This panel should answer: "What needs attention right now?"
 - detect study relevance
 - generate candidate internal classes using rules
 - score classes with structure, regex, and semantic similarity
-- use LLM arbitration only for ambiguous cases
+- use Anthropic model arbitration only for ambiguous cases
 - write final class plus explanation and evidence spans
 - persist label decisions into `documents`
 
@@ -1113,7 +1115,8 @@ Use `pgvector` inside Supabase only for fallback semantic retrieval and ambiguou
 - `Supabase Storage` for raw and derived files
 - `pgvector` only if semantic retrieval is needed
 - `Python 3.11` offline pipeline for extraction, classification, entity extraction, and edge generation
-- OpenAI only for hard classification or relation arbitration cases
+- OpenAI for embeddings only
+- Anthropic for hard classification or relation arbitration cases
 
 ## Output Contracts
 
@@ -1152,6 +1155,8 @@ Each document node should link cleanly to the UI sidebars without extra computat
 ## Assumptions
 
 - External API use is allowed, so LLM arbitration can be used for hard cases
+- OpenAI is used for embeddings
+- Anthropic is used for reasoning-heavy arbitration
 - The graph is the main product; classification is a supporting layer
 - Internal taxonomy should remain richer than the hackathon scoring labels
 - If judging later clarifies different mappings for DSUR, DSMB, SmPC, ethics approvals, or monitoring documents, the collapse map changes but the graph model does not

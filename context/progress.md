@@ -9,16 +9,26 @@
 ## Milestone 1: Project Foundation
 
 - [x] `1.1` Finalize architecture and database schema design
-- [ ] `1.2` Set up Supabase project
-- [ ] `1.3` Configure environment variables and local development workflow
-- [ ] `1.4` Create initial SQL schema and migrations
-- [ ] `1.5` Set up Supabase Storage buckets
-- [ ] `1.6` Verify database connectivity, storage access, and base schema
+- [x] `1.2` Set up Supabase project
+- [x] `1.3` Configure environment variables and local development workflow
+- [x] `1.4` Create initial SQL schema and migrations
+- [x] `1.5` Set up Supabase Storage buckets
+- [x] `1.6` Verify database connectivity, storage access, and base schema
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Designed the concrete hackathon architecture around `Next.js + Python + Supabase Postgres + Supabase Storage`. Chose relational graph modeling over a dedicated graph database, with optional `pgvector` only for semantic fallback retrieval.
 - `2026-04-15 17:35:30 +02:00` Expanded the schema design in `context/context_hackathon.md` with schemas, enums, tables, keys, indexes, views, and the end-to-end pipeline so implementation can start directly from it.
+- `2026-04-15 17:57:51 +02:00` Added `.vscode/mcp.json` with the Supabase MCP server pointing to project ref `nnojrrfvlfhmjggctlzt`. This establishes the repo-local MCP configuration for VS Code and compatible clients.
+- `2026-04-15 17:57:51 +02:00` Added `.env.example` and a basic `.gitignore` so the local workflow has explicit Supabase and OpenAI placeholders without committing secrets. The optional `supabase/agent-skills` install was not run because it modifies the user environment outside the repo.
+- `2026-04-15 18:10:29 +02:00` Added the OpenAI developer docs MCP globally, updated the global Supabase MCP entry to project ref `nnojrrfvlfhmjggctlzt`, and completed the Supabase MCP OAuth login flow. `codex mcp list` now shows the expected Supabase server URL with OAuth auth enabled.
+- `2026-04-15 18:10:29 +02:00` Initialized the local `supabase/` scaffold and generated the first migration file, then wrote the initial schema SQL. Remote validation is still blocked because the current Supabase CLI identity does not have the necessary privileges on project `nnojrrfvlfhmjggctlzt`.
+- `2026-04-15 18:12:33 +02:00` Updated the architecture to use OpenAI for embeddings and Anthropic for reasoning/arbitration, and corrected `.env.example` so it no longer contains a real API key. Also removed transient npm files created by the CLI bootstrap path from the repo root.
+- `2026-04-15 18:20:55 +02:00` Installed the optional `supabase` and `supabase-postgres-best-practices` agent skills into `.agents/skills` and verified their presence. This is now configured for future implementation work.
+- `2026-04-15 18:20:55 +02:00` Re-verified the Supabase MCP connection: `codex mcp list` shows the correct project ref with OAuth auth enabled. CLI access still does not reach the target project because the current Supabase CLI identity cannot link to `nnojrrfvlfhmjggctlzt`.
+- `2026-04-15 18:54:12 +02:00` Linked the repo to the correct remote Supabase project, ran a clean `db push --linked`, and verified the migration history shows `20260415160425_initial_schema.sql` applied remotely. This completes the initial schema and migration milestone.
+- `2026-04-15 18:54:12 +02:00` Verified live remote DB connectivity with `current_database()`, confirmed core tables exist through remote SQL, and accepted the user-confirmed dashboard verification that `raw-documents` and `derived-artifacts` buckets are present. Milestone 1 is now complete.
+- `2026-04-15 18:56:14 +02:00` Cleaned repo hygiene before starting Milestone 2: updated `.gitignore` to keep `.env.example` committed while ignoring `skills-lock.json`. The Supabase scaffold and milestone records are ready to be committed and pushed.
 
 ## Milestone 2: Document Ingestion Pipeline
 
