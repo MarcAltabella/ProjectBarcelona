@@ -9,6 +9,7 @@
 
 node_modules/
 skills-lock.json
+__pycache__/
 
 # Next.js
 web/.next/

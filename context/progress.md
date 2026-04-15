@@ -48,42 +48,50 @@
 
 ## Milestone 3: Classification and Entity Extraction
 
-- [ ] `3.1` Implement study relevance detection
-- [ ] `3.2` Implement internal document taxonomy classification
-- [ ] `3.3` Implement entity extraction for studies, products, versions, sites, patients, safety events, regulators, and people
-- [ ] `3.4` Add ambiguity handling and confidence scoring
-- [ ] `3.5` Add optional LLM arbitration for low-confidence cases
-- [ ] `3.6` Verify classification and extraction on edge-case documents
+- [x] `3.1` Implement study relevance detection
+- [x] `3.2` Implement internal document taxonomy classification
+- [x] `3.3` Implement entity extraction for studies, products, versions, sites, patients, safety events, regulators, and people
+- [x] `3.4` Add ambiguity handling and confidence scoring
+- [x] `3.5` Add optional LLM arbitration for low-confidence cases
+- [x] `3.6` Verify classification and extraction on edge-case documents
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No classification or entity extraction work implemented yet.
+- `2026-04-15 19:57:20 +02:00` Added `scripts/classify_and_extract.py` as the deterministic Milestone 3 pipeline. It reuses local extraction, scores the internal taxonomy with explicit rules, maps to final hackathon labels, extracts canonical entities, and writes `documents`, `studies`, `products`, `entities`, and `document_entities` through the Supabase service-role API.
+- `2026-04-15 19:57:20 +02:00` Ran the full Milestone 3 pipeline on all `93` documents and persisted the outputs remotely. Verified `93` classified documents, `6` studies, `3` products, `158` canonical entities, and `459` document-entity mention rows after fixing the `BIORCE-SAE-*` study/safety-event collision.
+- `2026-04-15 19:57:20 +02:00` Verified representative edge cases across clean and noisy documents: publication (`File_001.md`), admin noise (`File_003.md`), protocol (`File_006.md`), HTML ICF (`File_014.html`), CSR (`File_036.txt`), eTMF index (`File_064.md`), CRF-style CSV (`File_073.csv`), unrelated multilingual consent (`File_075.pdf`), OCR/fax synopsis (`Scan_0031_compressed.txt`), and generic deviation log (`Q1_2024_updated_REVIEWED_v3_JL_edits.txt`).
+- `2026-04-15 21:15:00 +02:00` Added LLM arbitration (milestone 3.5) using Anthropic Claude for documents with classification confidence below 0.85. Integrated into `classify_document()` with a `--skip-llm` flag. Verified on 6 low-confidence documents: the LLM corrected all 4 zero-score misclassifications (catering invoice, clinical assessment CRF, German lab ref ranges, Norwegian patient info) and confirmed or refined 2 mid-confidence cases. 23 of 93 documents fall below the 0.85 threshold.
+- `2026-04-15 22:10:00 +02:00` Major classification overhaul based on audit against the hackathon brief. Key changes: (1) Removed `study_relevance → NOISE` override — documents are now classified by type regardless of sponsor (NOISE=25→10 exact match). (2) Fixed `FINAL_LABEL_MAP`: `eTMF_regulatory_correspondence` and `Ethics_approval` now map to `eTMF` (Regulatory=10→3 exact, eTMF=6→13 exact). (3) Added `Patient_questionnaire` and `Info_sheet` categories with rules and DB enum values. (4) Added OCR-tolerant regexes for study codes and product codes (`BIORCE- ONC- 2023- 001` with spaces). (5) Improved NOISE detection: catches ESG reports, press releases, job postings, catering invoices, and academic review articles with journal DOI markers. (6) Updated LLM prompt to match new NOISE definition. Re-ran full pipeline: all 93 docs >= 0.85 confidence, 10/12 classes at exact or ±1 match with brief expectations.
 
 ## Milestone 4: Graph and Alert Engine
 
-- [ ] `4.1` Implement document family inference
-- [ ] `4.2` Implement deterministic edge generation
-- [ ] `4.3` Implement semantic related-document linking
-- [ ] `4.4` Implement duplicate and near-duplicate detection
-- [ ] `4.5` Implement superseded-version and contradiction detection
-- [ ] `4.6` Generate alert records and graph-ready payloads
-- [ ] `4.7` Verify graph quality and alert quality on representative document clusters
+- [x] `4.1` Implement document family inference
+- [x] `4.2` Implement deterministic edge generation
+- [x] `4.3` Implement semantic related-document linking
+- [x] `4.4` Implement duplicate and near-duplicate detection
+- [x] `4.5` Implement superseded-version and contradiction detection
+- [x] `4.6` Generate alert records and graph-ready payloads
+- [x] `4.7` Verify graph quality and alert quality on representative document clusters
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No graph or alert logic implemented yet.
+- `2026-04-15 23:30:00 +02:00` Implemented `scripts/build_graph.py` as the agentic 3-pass graph engine. Pass 1: deterministic edges (TF-IDF near-duplicate detection, entity-based BELONGS_TO_STUDY/ABOUT_PRODUCT/MENTIONS_SITE/PATIENT/SAFETY_EVENT edges, version chain prep). Pass 2: agentic cluster resolution (Claude receives groups of related documents and reasons about families, version chains, contradictions, missing links, and reclassifications). Pass 3: alert generation from rules + agent findings.
+- `2026-04-15 23:30:00 +02:00` Ran full pipeline on all 93 documents. Results: 994 relations (628 BELONGS_TO_STUDY, 249 ABOUT_PRODUCT, 74 MENTIONS_SITE, 11 SUPERSEDES, 11 REFERS_TO, 5 RELATED_TO, 4 IMPLEMENTS_AMENDMENT, 4 NEAR_DUPLICATE_OF, 1 DUPLICATE_OF). 58 alerts (16 isolated, 13 superseded, 10 near-duplicate, 6 contradiction, 6 suspicious noise, 4 low confidence, 3 missing expected link). 46 document families, 39 docs assigned to families, 33 docs marked current, 10 marked superseded. Agent proposed 3 reclassifications (2 accepted, 1 skipped for invalid label).
 
 ## Milestone 5: Backend and API Layer
 
-- [ ] `5.1` Create backend routes for graph data
-- [ ] `5.2` Create backend routes for document sidebar data
-- [ ] `5.3` Create backend routes for alerts
-- [ ] `5.4` Create backend routes for related-document retrieval
-- [ ] `5.5` Verify API responses against the designed output contracts
+- [x] `5.1` Create backend routes for graph data
+- [x] `5.2` Create backend routes for document sidebar data
+- [x] `5.3` Create backend routes for alerts
+- [x] `5.4` Create backend routes for related-document retrieval
+- [x] `5.5` Verify API responses against the designed output contracts
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No backend or API implementation started yet.
+- `2026-04-16 00:00:00 +02:00` Scaffolded Next.js App Router project in `web/` with TypeScript, Tailwind, and `@supabase/supabase-js`. Created RLS read policies for all public tables (anon role). Implemented 4 API routes: `GET /api/graph` (93 nodes, 994 edges with study/class/confidence filters), `GET /api/documents/[id]` (sidebar payload with entities, alerts, family), `GET /api/documents/[id]/related` (ranked related docs from relations), `GET /api/alerts` (58 alerts with severity/type/study/class filters). All verified against live Supabase data.
 
 ## Milestone 6: Frontend Graph Application
 
