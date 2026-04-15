@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── SF Pro system font stack ─────────────────────────────────────── */
+:root {
+  --font-sans: "SF Pro Display", "SF Pro Text", -apple-system,
+    BlinkMacSystemFont, var(--font-inter, "Inter"), "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
+}
+
+/* ── Semantic colour tokens (light / track-policy palette) ────────── */
+:root {
+  --background: 50 14% 97%;      /* #FAFAF8 warm off-white */
+  --foreground: 240 3% 12%;      /* #1D1D1F ink */
+  --card: 0 0% 100%;             /* #FFFFFF */
+  --card-foreground: 240 3% 12%;
+  --muted: 50 13% 96%;           /* #F5F5F3 */
+  --muted-foreground: 240 2% 54%;/* #86868B */
+  --accent: 50 13% 96%;
+  --accent-foreground: 240 3% 12%;
+  --primary: 240 3% 12%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 50 13% 96%;
+  --secondary-foreground: 240 3% 12%;
+  --destructive: 0 50% 67%;      /* #D98080 */
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 92%;            /* ≈ rgba(0,0,0,.08) on white */
+  --input: 0 0% 92%;
+  --ring: 240 3% 12%;
+  --radius: 1rem;
+}
+
+/* ── Base styles ──────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+/* ── Track-policy hairline helper ─────────────────────────────────── */
+.hairline {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+/* ── Glassmorphism ────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+}
+
+/* ── React Flow overrides (light theme) ───────────────────────────── */
+.react-flow__renderer,
+.react-flow__background {
+  background: hsl(50 14% 97%) !important;
+}
+.react-flow__edge-path {
+  stroke: rgba(0, 0, 0, 0.15);
+}
+.react-flow__edge-text {
+  font-size: 10px;
+  fill: hsl(240 2% 54%);
+}
+.react-flow__controls {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: hsl(240 3% 12%);
+  width: 28px;
+  height: 28px;
+}
+.react-flow__controls-button:hover {
+  background: hsl(50 13% 96%);
+}
+.react-flow__minimap {
+  background: white !important;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Subtle fade-in ───────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Floating panel resize handle ──────────────────────────────────── */
+.floating-panel::-webkit-resizer {
+  background: transparent;
+}
+.floating-panel {
+  position: relative;
+}
+.floating-panel::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 9px 9px, rgba(0,0,0,.15) 1.5px, transparent 1.5px),
+              radial-gradient(circle at 5px 9px, rgba(0,0,0,.15) 1.5px, transparent 1.5px),
+              radial-gradient(circle at 9px 5px, rgba(0,0,0,.15) 1.5px, transparent 1.5px);
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.18);
+}

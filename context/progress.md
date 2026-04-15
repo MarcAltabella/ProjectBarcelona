@@ -87,16 +87,17 @@
 
 ## Milestone 6: Frontend Graph Application
 
-- [ ] `6.1` Set up `Next.js`, `Tailwind CSS`, and `shadcn/ui`
-- [ ] `6.2` Implement central graph canvas with `React Flow`
-- [ ] `6.3` Implement left document-intelligence sidebar
-- [ ] `6.4` Implement right alerts sidebar
-- [ ] `6.5` Add filters for study, class, severity, and relation type
+- [x] `6.1` Set up `Next.js`, `Tailwind CSS`, and `shadcn/ui`
+- [x] `6.2` Implement central graph canvas with `React Flow`
+- [x] `6.3` Implement left document-intelligence sidebar
+- [x] `6.4` Implement right alerts sidebar
+- [x] `6.5` Add filters for study, class, severity, and relation type
 - [ ] `6.6` Verify graph interactions, node clicks, edge clicks, and sidebar loading
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No frontend work implemented yet.
+- `2026-04-15 20:00:00 +02:00` Scaffolded the full Next.js 15 app in `web/`. Stack: Next.js 15 + React 19 + TypeScript + Tailwind v3 + shadcn/ui CSS variables + @xyflow/react v12 + Zustand v5 + TanStack Query v5 + Supabase JS. Created AppShell (three-panel layout), GraphCanvas, DocumentNode, LeftSidebar, RightSidebar, all four API routes, typed lib (types.ts, store.ts, api.ts, supabase.ts, utils.ts). Routes degrade gracefully until graph_nodes_v/graph_edges_v views are available (Milestone 4). Run `npm install && npm run dev` from `web/` to start.
 
 ## Milestone 7: Integration, Validation, and Polish
 
