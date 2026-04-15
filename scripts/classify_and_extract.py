@@ -363,6 +363,35 @@ def classify_document(file_path: Path, *, skip_llm: bool = False) -> Classificat
             score += heading_hits * 0.75
         scores[label] = round(score, 3)
 
+    # --- Protocol structure boost ---
+    # A long document with multiple co-occurring protocol sections is almost
+    # certainly a CSP, even if it mentions CRF/Synopsis keywords in its body.
+    protocol_sections_found = sum(1 for term in [
+        "inclusion criteria", "exclusion criteria",
+        "schedule of assessments", "study design",
+        "statistical analysis", "study objectives",
+        "primary endpoint", "secondary endpoint",
+        "sample size", "study population",
+        "investigational product", "study procedures",
+    ] if term in lowered)
+    is_long_document = len(text) > 4000
+    if protocol_sections_found >= 4 and is_long_document:
+        boost = 2.0 + (protocol_sections_found - 4) * 0.5
+        scores["CSP_full"] = round(scores.get("CSP_full", 0) + boost, 3)
+        reasons["CSP_full"].append(f"protocol structure boost ({protocol_sections_found} sections)")
+
+    # If text continues well beyond a synopsis section into full protocol body,
+    # boost CSP_full over CSP_synopsis
+    if scores.get("CSP_synopsis", 0) > scores.get("CSP_full", 0):
+        full_body_signals = sum(1 for term in [
+            "study objectives", "study design", "statistical analysis",
+            "inclusion criteria", "exclusion criteria",
+            "investigational product", "study procedures",
+        ] if term in lowered)
+        if full_body_signals >= 3 and is_long_document:
+            scores["CSP_full"] = round(scores["CSP_synopsis"] + 2.0, 3)
+            reasons["CSP_full"].append(f"full protocol body detected ({full_body_signals} sections beyond synopsis)")
+
     ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
     top_label, top_score = ranked[0]
     second_label, second_score = ranked[1]
@@ -402,6 +431,19 @@ def classify_document(file_path: Path, *, skip_llm: bool = False) -> Classificat
     confidence = confidence_from_scores(top_score, second_score)
     if top_score < 4.5:
         confidence = round(min(confidence, 0.62), 4)
+
+    # --- Ambiguity detection: route contested pairs to LLM ---
+    # When two competing classes both score highly, the rules can't reliably
+    # disambiguate. Cap confidence to trigger LLM arbitration.
+    contested_pairs = {
+        frozenset({"CSP_full", "CRF_patient_form"}),
+        frozenset({"CSP_full", "CSP_synopsis"}),
+        frozenset({"CSP_synopsis", "CSR"}),
+        frozenset({"ICF", "Info_sheet"}),
+    }
+    pair = frozenset({top_label, second_label})
+    if pair in contested_pairs and second_score > 0 and top_score - second_score < 5.0:
+        confidence = round(min(confidence, 0.80), 4)
 
     explanation_parts = reasons[top_label][:3]
     if study_relevance and study_codes:
