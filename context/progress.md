@@ -82,15 +82,16 @@
 
 ## Milestone 5: Backend and API Layer
 
-- [ ] `5.1` Create backend routes for graph data
-- [ ] `5.2` Create backend routes for document sidebar data
-- [ ] `5.3` Create backend routes for alerts
-- [ ] `5.4` Create backend routes for related-document retrieval
-- [ ] `5.5` Verify API responses against the designed output contracts
+- [x] `5.1` Create backend routes for graph data
+- [x] `5.2` Create backend routes for document sidebar data
+- [x] `5.3` Create backend routes for alerts
+- [x] `5.4` Create backend routes for related-document retrieval
+- [x] `5.5` Verify API responses against the designed output contracts
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No backend or API implementation started yet.
+- `2026-04-16 00:00:00 +02:00` Scaffolded Next.js App Router project in `web/` with TypeScript, Tailwind, and `@supabase/supabase-js`. Created RLS read policies for all public tables (anon role). Implemented 4 API routes: `GET /api/graph` (93 nodes, 994 edges with study/class/confidence filters), `GET /api/documents/[id]` (sidebar payload with entities, alerts, family), `GET /api/documents/[id]/related` (ranked related docs from relations), `GET /api/alerts` (58 alerts with severity/type/study/class filters). All verified against live Supabase data.
 
 ## Milestone 6: Frontend Graph Application
 
