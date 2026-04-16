@@ -73,6 +73,8 @@ function StatusPill({ status }: { status: string }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function LeftSidebar({ documentId }: { documentId: string | null }) {
+  const setDocumentViewOpen = useGraphStore((s) => s.setDocumentViewOpen)
+
   const { data: doc, isLoading: docLoading } = useQuery({
     queryKey: ["document", documentId],
     queryFn: () => fetchDocument(documentId!),
@@ -112,9 +114,6 @@ export function LeftSidebar({ documentId }: { documentId: string | null }) {
       </div>
     )
   }
-
-  // ── Populated state ────────────────────────────────────────────────────
-  const { setDocumentViewOpen } = useGraphStore()
 
   return (
     <div className="p-5 space-y-4 text-sm">

@@ -83,6 +83,7 @@ export interface RawGraphNode {
   document_status?: DocumentStatus
   alert_count: number
   max_alert_severity?: AlertSeverity
+  search_text?: string
 }
 
 /** Flat edge row returned from graph_edges_v or equivalent */
@@ -107,6 +108,15 @@ export interface EntityMention {
   value: string
 }
 
+export interface DocumentAlert {
+  id: string
+  alert_type: AlertType
+  severity: AlertSeverity
+  title: string
+  description: string
+  evidence_spans?: Record<string, unknown>[]
+}
+
 export interface DocumentDetail {
   id: string
   file_name: string
@@ -122,6 +132,8 @@ export interface DocumentDetail {
   top_entities: EntityMention[]
   alert_count: number
   top_2_labels?: DocumentClass[]
+  preview_text?: string
+  alerts?: DocumentAlert[]
 }
 
 // ─── Related documents (from /api/documents/:id/related) ─────────────────────

@@ -100,12 +100,14 @@
 - [x] `6.3` Implement left document-intelligence sidebar
 - [x] `6.4` Implement right alerts sidebar
 - [x] `6.5` Add filters for study, class, severity, and relation type
-- [ ] `6.6` Verify graph interactions, node clicks, edge clicks, and sidebar loading
+- [x] `6.6` Verify graph interactions, node clicks, edge clicks, and sidebar loading
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. No frontend work implemented yet.
 - `2026-04-15 20:00:00 +02:00` Scaffolded the full Next.js 15 app in `web/`. Stack: Next.js 15 + React 19 + TypeScript + Tailwind v3 + shadcn/ui CSS variables + @xyflow/react v12 + Zustand v5 + TanStack Query v5 + Supabase JS. Created AppShell (three-panel layout), GraphCanvas, DocumentNode, LeftSidebar, RightSidebar, all four API routes, typed lib (types.ts, store.ts, api.ts, supabase.ts, utils.ts). Routes degrade gracefully until graph_nodes_v/graph_edges_v views are available (Milestone 4). Run `npm install && npm run dev` from `web/` to start.
+- `2026-04-16 02:19:13 +02:00` Replaced the toy-data-first UI path with live Supabase-backed graph, document, related-document, and alert routes. Normalized route payloads to the real DB schema, added metadata-aware search, and verified compiled route responses against live data (`93` graph nodes, `993` edges, live document previews, related docs, and alerts).
+- `2026-04-16 02:19:13 +02:00` Finished the main graph interactions and document reader UX: locked the graph viewport (no panning, zooming, or node dragging), added graph safe margins around the top and bottom bars, and replaced the old below-page file view with a centered reader that hides the graph chrome and highlights warning/error text spans inline. Verified with repeated `npm run build` passes after each change.
 
 ## Milestone 7: Integration, Validation, and Polish
 

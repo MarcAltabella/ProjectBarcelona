@@ -1,15 +1,16 @@
 "use client"
 
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo } from "react"
 import {
   ReactFlow,
   Background,
   BackgroundVariant,
-  Controls,
   useNodesState,
   useEdgesState,
+  type Edge,
   type NodeTypes,
-  type OnNodeClick,
+  type NodeMouseHandler,
+  useReactFlow,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { useQuery } from "@tanstack/react-query"
@@ -23,6 +24,15 @@ import type { RawGraphNode, RawGraphEdge } from "@/lib/types"
 const nodeTypes: NodeTypes = {
   document: DocumentNode,
 }
+
+const EDGE_COLOR = {
+  positive: "#7EBC8E",
+  contextual: "#5DA8C7",
+  progression: "#6F7FD1",
+  warning: "#D9A766",
+  danger: "#D98080",
+  neutral: "rgba(29,29,31,0.22)",
+} as const
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 
@@ -45,6 +55,9 @@ function layoutNodes(raw: RawGraphNode[]) {
       alert_count: n.alert_count ?? 0,
       max_alert_severity: n.max_alert_severity,
       document_id: n.document_id,
+    },
+    style: {
+      transition: "transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 180ms ease",
     },
   }))
 
@@ -70,35 +83,119 @@ function layoutNodes(raw: RawGraphNode[]) {
         max_alert_severity: n.max_alert_severity,
         document_id: n.document_id,
       },
+      style: {
+        transition: "transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 180ms ease",
+      },
     }
   })
 
   return [...hubNodes, ...docNodes]
 }
 
+function getEdgeVisuals(relationType: RawGraphEdge["relation_type"], confidence: number) {
+  const width = Math.max(1.5, confidence * 3)
+
+  if (relationType === "DUPLICATE_OF" || relationType === "NEAR_DUPLICATE_OF") {
+    return {
+      stroke: EDGE_COLOR.warning,
+      strokeWidth: width,
+      animated: false,
+      strokeDasharray: relationType === "NEAR_DUPLICATE_OF" ? "6 5" : undefined,
+    }
+  }
+
+  if (relationType === "CONTRADICTS" || relationType === "HAS_ALERT") {
+    return {
+      stroke: EDGE_COLOR.danger,
+      strokeWidth: width,
+      animated: relationType === "CONTRADICTS",
+      strokeDasharray: "5 4",
+    }
+  }
+
+  if (
+    relationType === "SUPERSEDES" ||
+    relationType === "SUPERSEDED_BY" ||
+    relationType === "IMPLEMENTS_AMENDMENT"
+  ) {
+    return {
+      stroke: EDGE_COLOR.progression,
+      strokeWidth: width,
+      animated: true,
+      strokeDasharray: undefined,
+    }
+  }
+
+  if (
+    relationType === "BELONGS_TO_STUDY" ||
+    relationType === "ABOUT_PRODUCT" ||
+    relationType === "IN_FAMILY" ||
+    relationType === "HAS_DOCUMENT_TYPE"
+  ) {
+    return {
+      stroke: EDGE_COLOR.positive,
+      strokeWidth: width,
+      animated: false,
+      strokeDasharray: undefined,
+    }
+  }
+
+  if (
+    relationType === "REFERS_TO" ||
+    relationType === "RELATED_TO" ||
+    relationType === "MENTIONS_SITE" ||
+    relationType === "MENTIONS_PATIENT" ||
+    relationType === "MENTIONS_SAFETY_EVENT" ||
+    relationType === "ISSUED_BY" ||
+    relationType === "SENT_TO" ||
+    relationType === "APPROVES"
+  ) {
+    return {
+      stroke: EDGE_COLOR.contextual,
+      strokeWidth: width,
+      animated: false,
+      strokeDasharray: undefined,
+    }
+  }
+
+  return {
+    stroke: EDGE_COLOR.neutral,
+    strokeWidth: width,
+    animated: false,
+    strokeDasharray: undefined,
+  }
+}
+
 function layoutEdges(raw: RawGraphEdge[]) {
-  return raw.map((e) => ({
-    id: e.edge_id,
-    source: e.source,
-    target: e.target,
-    label: e.label ?? undefined,
-    animated:
-      e.relation_type === "SUPERSEDES" || e.relation_type === "SUPERSEDED_BY",
-    style: {
-      stroke: "rgba(0,0,0,0.12)",
-      strokeWidth: Math.max(1, e.confidence * 2),
-    },
-    labelStyle: { fontSize: 10, fill: "#86868B" },
-    labelBgStyle: { fill: "#FAFAF8", fillOpacity: 0.85 },
-  }))
+  return raw.map((e) => {
+    const visuals = getEdgeVisuals(e.relation_type, e.confidence)
+
+    return {
+      id: e.edge_id,
+      source: e.source,
+      target: e.target,
+      label: e.label ?? undefined,
+      animated: visuals.animated,
+      style: {
+        stroke: visuals.stroke,
+        strokeWidth: visuals.strokeWidth,
+        strokeDasharray: visuals.strokeDasharray,
+        transition: "stroke 180ms ease, opacity 180ms ease",
+      },
+      labelStyle: { fontSize: 10, fill: "#86868B" },
+      labelBgStyle: { fill: "#FAFAF8", fillOpacity: 0.85 },
+    }
+  })
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GraphCanvas() {
   const { filters, selectDocument, selectedDocumentId, searchQuery } = useGraphStore()
+  const deferredSearchQuery = useDeferredValue(searchQuery)
   const [nodes, setNodes, onNodesChange] = useNodesState<DocumentNodeType>([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const { fitView } = useReactFlow()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["graph", filters.studyId, filters.documentClass],
@@ -109,52 +206,61 @@ export function GraphCanvas() {
       }),
   })
 
-  useEffect(() => {
-    if (!data) return
-    setNodes(layoutNodes(data.nodes))
-    setEdges(layoutEdges(data.edges))
-  }, [data, setNodes, setEdges])
+  const filteredGraph = useMemo(() => {
+    if (!data) return { nodes: [] as RawGraphNode[], edges: [] as RawGraphEdge[] }
 
-  // Highlight selected node + dim non-matching nodes during search
-  const styledNodes = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim()
-    return nodes.map((n) => {
-      const matches =
-        !q ||
-        n.data.label.toLowerCase().includes(q) ||
-        (n.data.document_class ?? "").toLowerCase().includes(q)
+    const query = deferredSearchQuery.toLowerCase().trim()
+    if (!query) return data
 
-      return {
-        ...n,
-        selected: n.data.document_id === selectedDocumentId,
-        style: {
-          ...n.style,
-          opacity: q && !matches ? 0.15 : 1,
-          transition: "opacity 0.2s ease",
-        },
-      }
-    })
-  }, [nodes, selectedDocumentId, searchQuery])
+    const matchingNodeIds = new Set(
+      data.nodes
+        .filter((node) => {
+          const haystack = [
+            node.search_text ?? "",
+            node.label,
+            node.group_key,
+            node.document_class ?? "",
+            node.document_status ?? "",
+          ]
+            .join(" ")
+            .toLowerCase()
 
-  // Dim edges connected to faded nodes
-  const styledEdges = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim()
-    if (!q) return edges
-
-    const matchIds = new Set(
-      styledNodes.filter((n) => (n.style?.opacity ?? 1) === 1).map((n) => n.id)
+          return haystack.includes(query)
+        })
+        .map((node) => node.node_id)
     )
-    return edges.map((e) => ({
-      ...e,
-      style: {
-        ...e.style,
-        opacity: matchIds.has(e.source) && matchIds.has(e.target) ? 1 : 0.08,
-        transition: "opacity 0.2s ease",
-      },
-    }))
-  }, [edges, styledNodes, searchQuery])
 
-  const onNodeClick: OnNodeClick = useCallback(
+    const filteredNodes = data.nodes.filter((node) => matchingNodeIds.has(node.node_id))
+    const filteredEdges = data.edges.filter(
+      (edge) => matchingNodeIds.has(edge.source) && matchingNodeIds.has(edge.target)
+    )
+
+    return { nodes: filteredNodes, edges: filteredEdges }
+  }, [data, deferredSearchQuery])
+
+  useEffect(() => {
+    setNodes(layoutNodes(filteredGraph.nodes))
+    setEdges(layoutEdges(filteredGraph.edges))
+  }, [filteredGraph, setNodes, setEdges])
+
+  useEffect(() => {
+    if (!filteredGraph.nodes.length) return
+    const frame = requestAnimationFrame(() => {
+      void fitView({ padding: 0.18, duration: 350 })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [filteredGraph, fitView])
+
+  const styledNodes = useMemo(
+    () =>
+      nodes.map((node) => ({
+        ...node,
+        selected: node.data.document_id === selectedDocumentId,
+      })),
+    [nodes, selectedDocumentId]
+  )
+
+  const onNodeClick: NodeMouseHandler<DocumentNodeType> = useCallback(
     (_, node) => {
       const docId = (node.data as DocumentNodeType["data"]).document_id
       selectDocument(docId ?? null)
@@ -180,7 +286,7 @@ export function GraphCanvas() {
 
       <ReactFlow
         nodes={styledNodes}
-        edges={styledEdges}
+        edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -188,6 +294,12 @@ export function GraphCanvas() {
         onPaneClick={() => selectDocument(null)}
         fitView
         fitViewOptions={{ padding: 0.15 }}
+        panOnDrag={false}
+        panOnScroll={false}
+        nodesDraggable={false}
+        zoomOnScroll={false}
+        zoomOnPinch={false}
+        zoomOnDoubleClick={false}
         minZoom={0.1}
         maxZoom={2.5}
         proOptions={{ hideAttribution: true }}
@@ -198,7 +310,6 @@ export function GraphCanvas() {
           gap={28}
           size={1}
         />
-        <Controls position="bottom-left" />
       </ReactFlow>
     </div>
   )
