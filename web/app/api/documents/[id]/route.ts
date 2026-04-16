@@ -68,7 +68,12 @@ export async function GET(
 
   const supabase = createServiceClient()
 
-  const [{ data: view }, { data: entityRows }, { data: alertRows }] =
+  const [
+    { data: view },
+    { data: entityRows },
+    { data: alertRows },
+    { data: deletionRow },
+  ] =
     await Promise.all([
       supabase
         .from("document_sidebar_v")
@@ -89,6 +94,11 @@ export async function GET(
         .eq("document_id", id)
         .eq("status", "open")
         .order("severity", { ascending: false }),
+      supabase
+        .from("documents")
+        .select("id, is_deleted")
+        .eq("id", id)
+        .maybeSingle(),
     ])
 
   if (view) {
@@ -106,6 +116,7 @@ export async function GET(
     const doc: DocumentDetail = {
       id,
       file_name: String(view.file_name),
+      is_deleted: deletionRow?.is_deleted == null ? null : Boolean(deletionRow.is_deleted),
       final_label: view.final_label as DocumentDetail["final_label"],
       internal_label: view.internal_label as DocumentDetail["internal_label"],
       classification_confidence:
@@ -141,7 +152,7 @@ export async function GET(
   const { data: doc, error } = await supabase
     .from("documents")
     .select(
-      "id, file_name, final_label, classification_confidence, classification_explanation, document_status, version_or_edition, language"
+      "id, file_name, is_deleted, final_label, classification_confidence, classification_explanation, document_status, version_or_edition, language"
     )
     .eq("id", id)
     .maybeSingle()

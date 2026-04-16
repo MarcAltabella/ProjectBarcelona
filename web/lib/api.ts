@@ -36,6 +36,17 @@ export async function fetchRelatedDocuments(
   return res.json()
 }
 
+export async function removeNoiseDocument(id: string): Promise<{ ok: true }> {
+  const res = await fetch(`/api/documents/${id}/remove`, {
+    method: "POST",
+  })
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({}))
+    throw new Error(payload?.error ?? "Failed to remove noise document")
+  }
+  return res.json()
+}
+
 // ─── Alerts ───────────────────────────────────────────────────────────────────
 
 export async function fetchAlerts(filters?: {

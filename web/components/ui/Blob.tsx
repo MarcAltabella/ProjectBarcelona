@@ -1,4 +1,6 @@
-import { SVGProps } from "react"
+"use client"
+
+import { SVGProps, useId } from "react"
 
 interface BlobProps extends SVGProps<SVGSVGElement> {
   color?: string
@@ -7,19 +9,21 @@ interface BlobProps extends SVGProps<SVGSVGElement> {
   wobbleAmount?: number
   wobbleSpeed?: number
   bobSpeed?: number
-  bobAmount?: number
 }
 
 export function Blob({
   color = "#10b981",
   size = 200,
-  circularity = 0.004,
-  wobbleAmount = 48,
-  wobbleSpeed = 10,
-  bobSpeed = 1.4,
-  bobAmount = 15,
+  circularity = 0.006,
+  wobbleAmount = 47,
+  wobbleSpeed = 8.5,
+  bobSpeed = 2.2,
   ...props
 }: BlobProps) {
+  const filterId = useId().replace(/:/g, "")
+  const noiseId = `${filterId}-noise`
+  const bobAnimation = bobSpeed > 0 ? `bob ${bobSpeed}s ease-in-out infinite` : undefined
+
   return (
     <svg
       viewBox="0 0 200 200"
@@ -27,33 +31,48 @@ export function Blob({
       height={size}
       xmlns="http://www.w3.org/2000/svg"
       style={{
-        animation: `bob ${bobSpeed}s ease-in-out infinite`,
+        animation: bobAnimation,
       }}
       {...props}
     >
       <defs>
-        <filter id="blobFilter">
+        <filter id={filterId}>
           <feTurbulence
+            id={noiseId}
             type="fractalNoise"
             baseFrequency={circularity}
             numOctaves="3"
             result="noise"
             seed="2"
-          />
+          >
+            <animate
+              attributeName="baseFrequency"
+              dur={`${wobbleSpeed}s`}
+              values={`${Math.max(0.001, circularity * 0.82)};${circularity};${Math.max(0.001, circularity * 1.18)};${circularity}`}
+              repeatCount="indefinite"
+            />
+          </feTurbulence>
           <feDisplacementMap
             in="SourceGraphic"
             in2="noise"
             scale={wobbleAmount}
             xChannelSelector="R"
             yChannelSelector="G"
-          />
+          >
+            <animate
+              attributeName="scale"
+              dur={`${wobbleSpeed * 0.75}s`}
+              values={`${Math.max(1, wobbleAmount * 0.85)};${wobbleAmount};${Math.max(1, wobbleAmount * 1.15)};${wobbleAmount}`}
+              repeatCount="indefinite"
+            />
+          </feDisplacementMap>
         </filter>
       </defs>
 
       <style>{`
         @keyframes bob {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-${bobAmount}px); }
+          50% { transform: translateY(-15px); }
         }
       `}</style>
 
@@ -62,19 +81,8 @@ export function Blob({
         cy="100"
         r="60"
         fill={color}
-        filter="url(#blobFilter)"
-        style={{
-          animation: `wobble ${wobbleSpeed}s ease-in-out infinite`,
-        }}
+        filter={`url(#${filterId})`}
       />
-
-      <style>{`
-        @keyframes wobble {
-          0% { filter: url(#blobFilter); }
-          50% { filter: url(#blobFilter); }
-          100% { filter: url(#blobFilter); }
-        }
-      `}</style>
     </svg>
   )
 }

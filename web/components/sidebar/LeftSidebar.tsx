@@ -1,8 +1,8 @@
 "use client"
 
-import { Eye } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
-import { fetchDocument, fetchRelatedDocuments } from "@/lib/api"
+import { Eye, Trash2 } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { fetchDocument, fetchRelatedDocuments, removeNoiseDocument } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { useGraphStore } from "@/lib/store"
 import { Card } from "@/components/ui/Card"
@@ -137,7 +137,13 @@ function StatusPill({ status }: { status: string }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function LeftSidebar({ documentId }: { documentId: string | null }) {
-  const { setDocumentViewOpen, setTransparencyDocument, setTransparencyOpen } = useGraphStore()
+  const queryClient = useQueryClient()
+  const {
+    setDocumentViewOpen,
+    setTransparencyDocument,
+    setTransparencyOpen,
+    selectDocument,
+  } = useGraphStore()
 
   const { data: doc, isLoading: docLoading } = useQuery({
     queryKey: ["document", documentId],
@@ -149,6 +155,20 @@ export function LeftSidebar({ documentId }: { documentId: string | null }) {
     queryKey: ["related", documentId],
     queryFn: () => fetchRelatedDocuments(documentId!),
     enabled: !!documentId,
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => removeNoiseDocument(id),
+    onSuccess: async () => {
+      selectDocument(null)
+      setDocumentViewOpen(false)
+      setTransparencyDocument(null)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["graph"] }),
+        queryClient.invalidateQueries({ queryKey: ["document"] }),
+        queryClient.invalidateQueries({ queryKey: ["related"] }),
+      ])
+    },
   })
 
   // ── Empty state ────────────────────────────────────────────────────────
@@ -201,6 +221,22 @@ export function LeftSidebar({ documentId }: { documentId: string | null }) {
           <Eye className="w-4 h-4" />
           View Document
         </button>
+        {doc.final_label === "NOISE" && doc.is_deleted !== true && (
+          <button
+            onClick={() => removeMutation.mutate(doc.id)}
+            disabled={removeMutation.isPending}
+            className={cn(
+              "mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg",
+              "text-[12px] font-medium",
+              "border border-[#D98080]/30 text-[#B45C5C] bg-[#FFF1F1]",
+              "hover:bg-[#FFE8E8] transition-colors disabled:opacity-50"
+            )}
+            title="Mark noise file as removed"
+          >
+            <Trash2 className="w-4 h-4" />
+            {removeMutation.isPending ? "Removing..." : "Remove Noise File"}
+          </button>
+        )}
       </div>
 
       {/* Confidence with transparency button */}
@@ -221,7 +257,14 @@ export function LeftSidebar({ documentId }: { documentId: string | null }) {
                 className="flex-shrink-0 hover:opacity-80 transition-opacity"
                 title="View explanation"
               >
-                <Blob size={24} color="#5A9E6A" circularity={0.01} wobbleAmount={8} wobbleSpeed={6} bobSpeed={2.2} bobAmount={0} />
+                <Blob
+                  size={24}
+                  color="#5A9E6A"
+                  circularity={0.01}
+                  wobbleAmount={8}
+                  wobbleSpeed={6}
+                  bobSpeed={2.2}
+                />
               </button>
             )}
           </div>

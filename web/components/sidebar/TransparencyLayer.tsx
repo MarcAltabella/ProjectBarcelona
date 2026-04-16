@@ -45,7 +45,7 @@ export function TransparencyLayer({
   }, [transparencyDocumentId, explanation])
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* Header with title and close button */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#7EBC8E]/15 shrink-0 min-h-[44px]">
         <p className="text-sm font-semibold text-[#5A9E6A]">Transparency</p>
@@ -62,7 +62,7 @@ export function TransparencyLayer({
 
       {/* Content - grows as text appears (only show when active) */}
       {isActive && (
-        <div className="px-4 py-4 overflow-y-auto flex-1 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           {doc?.final_label && (
             <p className="text-[12px] font-medium text-[#5A9E6A]">
               Why is this {doc.final_label}?

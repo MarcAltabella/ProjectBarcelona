@@ -119,7 +119,7 @@ export async function GET(request: Request) {
     const [{ data: docs }, { data: documentEntities }] = await Promise.all([
       supabase
         .from("documents")
-        .select("id, internal_label, classification_explanation, metadata")
+        .select("id, is_deleted, internal_label, classification_explanation, metadata")
         .in("id", documentIds),
       supabase
         .from("document_entities")
@@ -132,6 +132,16 @@ export async function GET(request: Request) {
     const docMap = new Map(
       (docs ?? []).map((doc) => [String(doc.id), doc as Record<string, unknown>])
     )
+    const deletedDocIds = new Set(
+      (docs ?? [])
+        .filter((doc) => doc.is_deleted === true)
+        .map((doc) => String(doc.id))
+    )
+    if (deletedDocIds.size > 0) {
+      nodes = nodes.filter(
+        (node) => !node.document_id || !deletedDocIds.has(node.document_id)
+      )
+    }
 
     const entityTermsByDoc = new Map<string, string[]>()
     for (const row of documentEntities ?? []) {

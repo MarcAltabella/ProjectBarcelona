@@ -120,6 +120,7 @@ export interface DocumentAlert {
 export interface DocumentDetail {
   id: string
   file_name: string
+  is_deleted?: boolean | null
   final_label?: DocumentClass
   internal_label?: InternalDocumentClass
   classification_confidence?: number

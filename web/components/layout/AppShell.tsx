@@ -181,7 +181,7 @@ export function AppShell() {
               zIndex: 31,
             }}
           >
-            <Blob size={40} color="#5A9E6A" />
+            <Blob size={40} color="#5A9E6A" bobSpeed={2.2} wobbleSpeed={7.2} />
           </div>
 
           {/* Transparency Layer Panel - Always visible */}
