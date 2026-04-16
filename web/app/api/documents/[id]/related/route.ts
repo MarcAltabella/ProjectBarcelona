@@ -18,7 +18,7 @@ export async function GET(
   const { data: relations } = await supabase
     .from("relations")
     .select(
-      "id, source_document_id, target_document_id, relation_type, confidence, source_rule_or_model"
+      "id, source_document_id, target_document_id, relation_type, confidence, source_rule_or_model, evidence_spans"
     )
     .or(`source_document_id.eq.${id},target_document_id.eq.${id}`)
     .order("confidence", { ascending: false })
@@ -49,6 +49,9 @@ export async function GET(
       relation_type: row.relation_type as RelatedDocument["relation_type"],
       confidence: Number(row.confidence ?? 0),
       source_rule_or_model: String(row.source_rule_or_model ?? "unknown"),
+      evidence_spans: Array.isArray(row.evidence_spans)
+        ? (row.evidence_spans as Array<Record<string, unknown>>)
+        : undefined,
       document: relatedDoc
         ? {
             id: String(relatedDoc.id),

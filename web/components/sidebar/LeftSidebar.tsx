@@ -8,7 +8,7 @@ import { useGraphStore } from "@/lib/store"
 import { Card } from "@/components/ui/Card"
 import { ClassBadge } from "@/components/ui/ClassBadge"
 import { Blob } from "@/components/ui/Blob"
-import type { DocumentClass } from "@/lib/types"
+import type { RelatedDocument } from "@/lib/types"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,6 +17,62 @@ function formatEntityType(type: string): string {
     .replace(/([A-Z])/g, " $1")
     .trim()
     .replace(/^\w/, (c) => c.toUpperCase())
+}
+
+function relationTypeLabel(relationType: string): string {
+  return relationType.replace(/_/g, " ").toLowerCase()
+}
+
+function formatEvidenceValue(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value)
+  }
+  return null
+}
+
+function formatRelationReason(related: RelatedDocument): string {
+  const spans = related.evidence_spans
+  if (!spans || spans.length === 0) {
+    return relationTypeLabel(related.relation_type)
+  }
+
+  const details: string[] = []
+
+  for (const span of spans) {
+    if (!span || typeof span !== "object") continue
+    const record = span as Record<string, unknown>
+
+    const type = formatEvidenceValue(record.type)
+    const entity = formatEvidenceValue(record.entity)
+    const value = formatEvidenceValue(record.value)
+    const field = formatEvidenceValue(record.field)
+
+    if (type && entity) {
+      details.push(`${type}: ${entity}`)
+      continue
+    }
+    if (type && value) {
+      details.push(`${type}: ${value}`)
+      continue
+    }
+    if (field && value) {
+      details.push(`${field}: ${value}`)
+      continue
+    }
+
+    const fallbackValue = entity ?? value ?? type ?? field
+    if (fallbackValue) details.push(fallbackValue)
+  }
+
+  if (details.length === 0) {
+    return relationTypeLabel(related.relation_type)
+  }
+
+  return details.slice(0, 2).join(" · ")
 }
 
 function ConfidenceBar({ value }: { value?: number }) {
@@ -250,10 +306,7 @@ export function LeftSidebar({ documentId }: { documentId: string | null }) {
                 <div className="flex items-center gap-2 mt-1">
                   <ClassBadge label={r.document.final_label} size="sm" />
                   <span className="text-[10px] text-[#86868B]">
-                    {r.relation_type.replace(/_/g, " ").toLowerCase()}
-                  </span>
-                  <span className="text-[10px] text-[#86868B]">
-                    · {Math.round(r.confidence * 100)}%
+                    {formatRelationReason(r)}
                   </span>
                 </div>
               </Card>

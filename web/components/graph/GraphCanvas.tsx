@@ -15,6 +15,7 @@ import {
 import "@xyflow/react/dist/style.css"
 import { useQuery } from "@tanstack/react-query"
 import { fetchGraph } from "@/lib/api"
+import { filterGraphBySearchTerms, parseSearchTerms } from "@/lib/searchTerms"
 import { useGraphStore } from "@/lib/store"
 import { DocumentNode, type DocumentNodeType } from "./DocumentNode"
 import type { RawGraphNode, RawGraphEdge } from "@/lib/types"
@@ -209,33 +210,8 @@ export function GraphCanvas() {
   const filteredGraph = useMemo(() => {
     if (!data) return { nodes: [] as RawGraphNode[], edges: [] as RawGraphEdge[] }
 
-    const query = deferredSearchQuery.toLowerCase().trim()
-    if (!query) return data
-
-    const matchingNodeIds = new Set(
-      data.nodes
-        .filter((node) => {
-          const haystack = [
-            node.search_text ?? "",
-            node.label,
-            node.group_key,
-            node.document_class ?? "",
-            node.document_status ?? "",
-          ]
-            .join(" ")
-            .toLowerCase()
-
-          return haystack.includes(query)
-        })
-        .map((node) => node.node_id)
-    )
-
-    const filteredNodes = data.nodes.filter((node) => matchingNodeIds.has(node.node_id))
-    const filteredEdges = data.edges.filter(
-      (edge) => matchingNodeIds.has(edge.source) && matchingNodeIds.has(edge.target)
-    )
-
-    return { nodes: filteredNodes, edges: filteredEdges }
+    const terms = parseSearchTerms(deferredSearchQuery)
+    return filterGraphBySearchTerms(data.nodes, data.edges, terms)
   }, [data, deferredSearchQuery])
 
   useEffect(() => {

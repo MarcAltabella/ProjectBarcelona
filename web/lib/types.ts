@@ -143,6 +143,7 @@ export interface RelatedDocument {
   relation_type: RelationType
   confidence: number
   source_rule_or_model: string
+  evidence_spans?: Array<Record<string, unknown>>
   document: {
     id: string
     file_name: string
