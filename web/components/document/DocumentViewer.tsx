@@ -36,6 +36,13 @@ const ALERT_STYLES = {
   },
 } as const
 
+function formatEntityType(type: string): string {
+  return type
+    .replace(/([A-Z])/g, " $1")
+    .trim()
+    .replace(/^\w/, (c) => c.toUpperCase())
+}
+
 type HighlightMatch = {
   start: number
   end: number
@@ -374,32 +381,26 @@ export function DocumentViewer({
 
           <div>
             <h2 className="mb-4 text-lg font-semibold text-ink">Document Text</h2>
-            <div className="space-y-4">
-              {paragraphs.length > 0 ? (
-                paragraphs.map((paragraph, index) => {
-                  const rendered = renderHighlightedParagraph(paragraph, importantAlerts)
-                  return (
-                    <div
-                      key={`${index}-${paragraph.slice(0, 32)}`}
-                      className={cn(
-                        "rounded-2xl border border-transparent px-5 py-4 transition-colors",
-                        rendered.severity
-                          ? `${ALERT_STYLES[rendered.severity].paragraph} border-black/[.04] border-l-4`
-                          : "bg-black/[.015]"
-                      )}
-                    >
-                      {rendered.content}
-                    </div>
-                  )
-                })
-              ) : (
-                <Card className="!rounded-2xl !p-6">
-                  <p className="text-[14px] leading-relaxed text-[#86868B]">
-                    No extracted text is available for this document yet.
-                  </p>
-                </Card>
-              )}
-            </div>
+            {paragraphs.length > 0 ? (
+              <div className="rounded-2xl border border-black/[.06] bg-black/[.015] px-6 py-6">
+                <div className="space-y-4 text-[14px] leading-7 text-[#4F4F4F]">
+                  {paragraphs.map((paragraph, index) => {
+                    const rendered = renderHighlightedParagraph(paragraph, importantAlerts)
+                    return (
+                      <div key={`${index}-${paragraph.slice(0, 32)}`}>
+                        {rendered.content}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <Card className="!rounded-2xl !p-6">
+                <p className="text-[14px] leading-relaxed text-[#86868B]">
+                  No extracted text is available for this document yet.
+                </p>
+              </Card>
+            )}
           </div>
         </div>
 
@@ -457,12 +458,21 @@ export function DocumentViewer({
                 Key Entities
               </p>
               <div className="space-y-2">
-                {doc.top_entities.map((entity, index) => (
-                  <Card key={`${entity.type}-${entity.value}-${index}`} className="!rounded-2xl !p-3.5">
+                {Object.entries(
+                  doc.top_entities.reduce(
+                    (acc, entity) => {
+                      if (!acc[entity.type]) acc[entity.type] = []
+                      acc[entity.type].push(entity.value)
+                      return acc
+                    },
+                    {} as Record<string, string[]>
+                  )
+                ).map(([type, values]) => (
+                  <Card key={type} className="!rounded-2xl !p-3.5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#86868B]">
-                      {entity.type}
+                      {formatEntityType(type)}
                     </p>
-                    <p className="mt-1 text-[13px] text-ink">{entity.value}</p>
+                    <p className="mt-1 text-[13px] text-ink">{values.join(", ")}</p>
                   </Card>
                 ))}
               </div>

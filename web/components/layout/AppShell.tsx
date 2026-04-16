@@ -1,15 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useGraphStore } from "@/lib/store"
 import { GraphCanvas } from "@/components/graph/GraphCanvas"
 import { DocumentViewer } from "@/components/document/DocumentViewer"
 import { LeftSidebar } from "@/components/sidebar/LeftSidebar"
-import { Legend } from "@/components/sidebar/Legend"
 import { RightSidebar } from "@/components/sidebar/RightSidebar"
 import { PromptBar } from "@/components/ui/PromptBar"
 import { SearchPill } from "@/components/ui/SearchPill"
 import { TopToolbar } from "@/components/ui/TopToolbar"
+import { TransparencyLayer } from "@/components/sidebar/TransparencyLayer"
+import { Blob } from "@/components/ui/Blob"
 
 const PANEL_STYLE: React.CSSProperties = {
   position: "absolute",
@@ -36,9 +37,14 @@ export function AppShell() {
   const selectedDocumentId = useGraphStore((state) => state.selectedDocumentId)
   const documentViewOpen = useGraphStore((state) => state.documentViewOpen)
   const setDocumentViewOpen = useGraphStore((state) => state.setDocumentViewOpen)
+  const transparencyDocumentId = useGraphStore((state) => state.transparencyDocumentId)
+  const transparencyOpen = useGraphStore((state) => state.transparencyOpen)
+  const setTransparencyOpen = useGraphStore((state) => state.setTransparencyOpen)
+  const setTransparencyDocument = useGraphStore((state) => state.setTransparencyDocument)
   const [searchOpen, setSearchOpen] = useState(false)
   const [alertsOpen, setAlertsOpen] = useState(false)
-  const [legendOpen, setLegendOpen] = useState(false)
+  const [transparencyHeight, setTransparencyHeight] = useState(BAR_H)
+  const transparencyRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -52,22 +58,32 @@ export function AppShell() {
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const usable = `100vh - ${TOP + BOTTOM_PAD}px`
-  const legendH = legendOpen ? `calc((${usable}) * 0.4)` : `${BAR_H}px`
-  const legendTopVal = `calc(100vh - ${BOTTOM_PAD}px - ${
-    legendOpen ? `(${usable}) * 0.4` : `${BAR_H}px`
-  })`
-  const alertsBottom = `calc(${
-    legendOpen ? `(${usable}) * 0.4` : `${BAR_H}px`
-  } + ${GAP + BOTTOM_PAD}px)`
+  // Track transparency panel height changes with ResizeObserver
+  useEffect(() => {
+    const panel = transparencyRef.current
+    if (!panel) return
+
+    const resizeObserver = new ResizeObserver(() => {
+      setTransparencyHeight(panel.offsetHeight)
+    })
+
+    resizeObserver.observe(panel)
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  // Transparency layer is always visible at TOP, positioned on right
+  // When collapsed: just the header (BAR_H)
+  // When expanded: grows dynamically with content
+  const transparencyIsExpanded = !!transparencyDocumentId
+  const transparencyMaxHeight = `calc(100vh - ${TOP + GAP * 2 + BAR_H + BOTTOM_PAD}px)` // Max space available (accounting for alerts bar below)
+
+  // Alerts bar is positioned directly below the transparency layer
+  // Uses dynamic transparency height to avoid overlap as it grows
+  const alertsTopVal = `${TOP + transparencyHeight + GAP}px`
+
   const alertsH = alertsOpen
-    ? `calc(100vh - ${TOP + GAP}px - ${alertsBottom})`
-    : `${BAR_H}px`
-  const alertsTopVal = alertsOpen
-    ? `${TOP}px`
-    : `calc(100vh - ${BOTTOM_PAD}px - ${
-        legendOpen ? `(${usable}) * 0.4` : `${BAR_H}px`
-      } - ${GAP}px - ${BAR_H}px)`
+    ? `calc(100vh - ${TOP}px - ${transparencyHeight}px - ${GAP}px - ${BOTTOM_PAD}px)` // Fill remaining space after transparency
+    : `${BAR_H}px` // Min height when closed
 
   return (
     <div
@@ -139,10 +155,10 @@ export function AppShell() {
           <aside
             style={{
               ...PANEL_STYLE,
-              top: `calc(${alertsTopVal})`,
+              top: alertsTopVal,
               right: 16,
               width: 320,
-              height: `calc(${alertsH})`,
+              height: alertsH,
               minWidth: 240,
               maxWidth: 480,
               overflow: alertsOpen ? "auto" : "hidden",
@@ -156,23 +172,40 @@ export function AppShell() {
             />
           </aside>
 
-          <aside
+          {/* Blob Mascot Animation - Above transparency bar */}
+          <div
             style={{
-              ...PANEL_STYLE,
-              top: `calc(${legendTopVal})`,
-              right: 16,
-              width: 320,
-              height: `calc(${legendH})`,
-              minWidth: 240,
-              maxWidth: 480,
-              overflow: legendOpen ? "auto" : "hidden",
-              transition:
-                "top 0.3s cubic-bezier(0.16,1,0.3,1), height 0.3s cubic-bezier(0.16,1,0.3,1)",
+              position: "absolute",
+              top: `${TOP - 28}px`,
+              right: 20,
+              zIndex: 31,
             }}
           >
-            <Legend
-              expanded={legendOpen}
-              onToggle={() => setLegendOpen((value) => !value)}
+            <Blob size={40} color="#5A9E6A" />
+          </div>
+
+          {/* Transparency Layer Panel - Always visible */}
+          <aside
+            ref={transparencyRef}
+            style={{
+              ...PANEL_STYLE,
+              top: TOP,
+              right: 16,
+              width: 320,
+              maxWidth: 480,
+              minWidth: 240,
+              maxHeight: transparencyMaxHeight,
+              minHeight: `${BAR_H}px`,
+              overflow: "auto",
+              background: "rgba(240, 249, 244, 0.92)",
+              borderColor: "rgba(126, 188, 142, 0.15)",
+              transition: "max-height 0.3s cubic-bezier(0.16,1,0.3,1), min-height 0.3s cubic-bezier(0.16,1,0.3,1)",
+            }}
+          >
+            <TransparencyLayer
+              onClose={() => {
+                setTransparencyDocument(null)
+              }}
             />
           </aside>
 

@@ -20,6 +20,10 @@ interface GraphState {
   // Document view mode
   documentViewOpen: boolean
 
+  // Transparency layer (explanation display)
+  transparencyDocumentId: string | null
+  transparencyOpen: boolean
+
   // Filters
   filters: GraphFilters
 
@@ -30,6 +34,8 @@ interface GraphState {
   setFilter: <K extends keyof GraphFilters>(key: K, value: GraphFilters[K]) => void
   resetFilters: () => void
   setDocumentViewOpen: (open: boolean) => void
+  setTransparencyDocument: (id: string | null) => void
+  setTransparencyOpen: (open: boolean) => void
 }
 
 const defaultFilters: GraphFilters = {
@@ -46,6 +52,8 @@ export const useGraphStore = create<GraphState>((set) => ({
   selectedEdgeId: null,
   searchQuery: "",
   documentViewOpen: false,
+  transparencyDocumentId: null,
+  transparencyOpen: false,
   filters: defaultFilters,
 
   selectDocument: (id) =>
@@ -65,4 +73,10 @@ export const useGraphStore = create<GraphState>((set) => ({
 
   setDocumentViewOpen: (open) =>
     set({ documentViewOpen: open }),
+
+  setTransparencyDocument: (id) =>
+    set({ transparencyDocumentId: id, transparencyOpen: !!id }),
+
+  setTransparencyOpen: (open) =>
+    set({ transparencyOpen: open }),
 }))

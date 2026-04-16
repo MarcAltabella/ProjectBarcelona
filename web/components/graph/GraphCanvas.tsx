@@ -293,7 +293,7 @@ export function GraphCanvas() {
         onNodeClick={onNodeClick}
         onPaneClick={() => selectDocument(null)}
         fitView
-        fitViewOptions={{ padding: 0.15 }}
+        fitViewOptions={{ padding: 0.1 }}
         panOnDrag={false}
         panOnScroll={false}
         nodesDraggable={false}

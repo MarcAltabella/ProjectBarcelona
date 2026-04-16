@@ -7,9 +7,17 @@ import { cn } from "@/lib/utils"
 import { useGraphStore } from "@/lib/store"
 import { Card } from "@/components/ui/Card"
 import { ClassBadge } from "@/components/ui/ClassBadge"
+import { Blob } from "@/components/ui/Blob"
 import type { DocumentClass } from "@/lib/types"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatEntityType(type: string): string {
+  return type
+    .replace(/([A-Z])/g, " $1")
+    .trim()
+    .replace(/^\w/, (c) => c.toUpperCase())
+}
 
 function ConfidenceBar({ value }: { value?: number }) {
   if (value == null) return null
@@ -73,7 +81,7 @@ function StatusPill({ status }: { status: string }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function LeftSidebar({ documentId }: { documentId: string | null }) {
-  const setDocumentViewOpen = useGraphStore((s) => s.setDocumentViewOpen)
+  const { setDocumentViewOpen, setTransparencyDocument, setTransparencyOpen } = useGraphStore()
 
   const { data: doc, isLoading: docLoading } = useQuery({
     queryKey: ["document", documentId],
@@ -139,23 +147,28 @@ export function LeftSidebar({ documentId }: { documentId: string | null }) {
         </button>
       </div>
 
-      {/* Confidence */}
+      {/* Confidence with transparency button */}
       {doc.classification_confidence != null && (
         <Card className="!p-3.5 !rounded-xl">
-          <Section title="Classification confidence">
-            <ConfidenceBar value={doc.classification_confidence} />
-          </Section>
-        </Card>
-      )}
-
-      {/* Why this label */}
-      {doc.classification_explanation && (
-        <Card className="!p-3.5 !rounded-xl">
-          <Section title="Why this label">
-            <p className="text-[13px] text-[#86868B] leading-[1.65]">
-              {doc.classification_explanation}
-            </p>
-          </Section>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1">
+              <Section title="Classification confidence">
+                <ConfidenceBar value={doc.classification_confidence} />
+              </Section>
+            </div>
+            {doc.classification_explanation && (
+              <button
+                onClick={() => {
+                  setTransparencyDocument(documentId)
+                  setTransparencyOpen(true)
+                }}
+                className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                title="View explanation"
+              >
+                <Blob size={24} color="#5A9E6A" circularity={0.01} wobbleAmount={8} wobbleSpeed={6} bobSpeed={2.2} bobAmount={0} />
+              </button>
+            )}
+          </div>
         </Card>
       )}
 
@@ -198,8 +211,17 @@ export function LeftSidebar({ documentId }: { documentId: string | null }) {
         <Card className="!p-3.5 !rounded-xl">
           <Section title="Key entities">
             <div className="space-y-1">
-              {doc.top_entities.map((e, i) => (
-                <Row key={i} label={e.type} value={e.value} />
+              {Object.entries(
+                doc.top_entities.reduce(
+                  (acc, e) => {
+                    if (!acc[e.type]) acc[e.type] = []
+                    acc[e.type].push(e.value)
+                    return acc
+                  },
+                  {} as Record<string, string[]>
+                )
+              ).map(([type, values]) => (
+                <Row key={type} label={formatEntityType(type)} value={values.join(", ")} />
               ))}
             </div>
           </Section>
