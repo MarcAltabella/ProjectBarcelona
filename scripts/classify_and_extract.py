@@ -445,12 +445,18 @@ def classify_document(file_path: Path, *, skip_llm: bool = False) -> Classificat
     if pair in contested_pairs and second_score > 0 and top_score - second_score < 5.0:
         confidence = round(min(confidence, 0.80), 4)
 
-    explanation_parts = reasons[top_label][:3]
-    if study_relevance and study_codes:
-        explanation_parts.append(f"study match {study_codes[0]}")
-    if is_noise and top_label != "Administrative_noise":
-        explanation_parts.append("non-clinical document (NOISE)")
-    explanation = "; ".join(explanation_parts) if explanation_parts else "weak heuristic match"
+    explanation = build_classification_explanation(
+        top_label=top_label,
+        top_score=top_score,
+        second_label=second_label,
+        second_score=second_score,
+        top_reasons=reasons[top_label],
+        study_relevance=study_relevance,
+        study_codes=study_codes,
+        product_codes=product_codes,
+        version_candidates=version_candidates,
+        is_noise=is_noise,
+    )
 
     top_2 = [
         {"label": label, "score": round(score, 3)}
@@ -488,6 +494,55 @@ def classify_document(file_path: Path, *, skip_llm: bool = False) -> Classificat
     if llm_result is None:
         return rule_result
     return llm_result
+
+
+def label_for_explanation(label: str) -> str:
+    return label.replace("_", " ")
+
+
+def build_classification_explanation(
+    *,
+    top_label: str,
+    top_score: float,
+    second_label: str,
+    second_score: float,
+    top_reasons: list[str],
+    study_relevance: bool,
+    study_codes: list[str],
+    product_codes: list[str],
+    version_candidates: list[str],
+    is_noise: bool,
+) -> str:
+    parts: list[str] = []
+
+    if top_reasons:
+        reasons_text = ", ".join(top_reasons[:2])
+        parts.append(f"Signals: {reasons_text}")
+    else:
+        parts.append("Signals: weak heuristic match")
+
+    parts.append(
+        f"Top: {label_for_explanation(top_label)} ({top_score:.1f}) vs "
+        f"{label_for_explanation(second_label)} ({second_score:.1f})"
+    )
+
+    context_bits: list[str] = []
+    if study_relevance and study_codes:
+        context_bits.append(f"Study {study_codes[0]}")
+    if product_codes:
+        context_bits.append(f"Product {product_codes[0]}")
+    if version_candidates:
+        context_bits.append(f"Version {version_candidates[0]}")
+    if context_bits:
+        parts.append(", ".join(context_bits[:2]))
+
+    if is_noise:
+        parts.append("Marked as NOISE (non-clinical content)")
+
+    explanation = "; ".join(parts)
+    if len(explanation) > 280:
+        explanation = explanation[:277].rstrip(" ,;:.") + "..."
+    return explanation
 
 
 def llm_arbitrate(
@@ -606,7 +661,7 @@ Respond with ONLY a JSON object (no markdown fencing) with these exact keys:
     if llm_final not in final_labels:
         llm_final = FINAL_LABEL_MAP.get(llm_internal, rule_result.final_label)
 
-    llm_confidence = round(max(0.05, min(float(llm_confidence), 0.99)), 4)
+    llm_confidence = round(max(0.05, min(float(llm_confidence), 0.94)), 4)
 
     print(f"    [LLM] result: {llm_internal} -> {llm_final} (confidence {llm_confidence:.4f}, relevance={llm_relevance})")
 

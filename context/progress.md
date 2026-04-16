@@ -111,13 +111,15 @@
 
 ## Milestone 7: Integration, Validation, and Polish
 
-- [ ] `7.1` Run the full pipeline on all corpus files
-- [ ] `7.2` Validate that graph nodes, edges, and alerts are persisted correctly
-- [ ] `7.3` Validate that related documents and explanations are useful in the UI
-- [ ] `7.4` Optimize graph readability and default filtering
-- [ ] `7.5` Fix high-priority pipeline and UI issues
-- [ ] `7.6` Freeze the demo-ready build
+- [x] `7.1` Run the full pipeline on all corpus files
+- [x] `7.2` Validate that graph nodes, edges, and alerts are persisted correctly
+- [x] `7.3` Validate that related documents and explanations are useful in the UI
+- [x] `7.4` Optimize graph readability and default filtering
+- [x] `7.5` Fix high-priority pipeline and UI issues
+- [x] `7.6` Freeze the demo-ready build
 
 ### Logs
 
 - `2026-04-15 17:35:30 +02:00` Milestone scaffold created. Integration and validation work will begin after the core pipeline and app are in place.
+- `2026-04-16 07:10:17 +02:00` Re-ran the full end-to-end pipeline on all `93` corpus files: `ingest_corpus.py`, `classify_and_extract.py`, and `build_graph.py`. Verified successful persistence with `995` relations, `59` alerts, and `21` families written to Supabase.
+- `2026-04-16 07:10:17 +02:00` Completed milestone polish items: tightened LLM classification confidence cap to `0.94`, improved related-document explanation detail via `evidence_spans`, refined graph search behavior (language-aware keyword parsing + AND matching), and removed related-card confidence percentages for cleaner demo UX.
