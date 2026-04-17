@@ -43,7 +43,7 @@ export function TopToolbar({ onOpenSearch }: { onOpenSearch: () => void }) {
     >
       {/* Brand */}
       <span className="px-3 text-[11px] font-bold tracking-widest text-ink/50 uppercase select-none hidden lg:block">
-        OMNISCENSE
+        KARPA
       </span>
 
       {/* Divider */}
